@@ -1,0 +1,87 @@
+---
+title: "US Murders"
+author: "Spencer Varadi"
+date: "8/9/2017"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width = 12)
+```
+## Professor Plum with a Candle Stick in the Library
+Homicide data from Kaggle was used to determine the mean annual murders per city reported from 1980 to 2014. This is not controlled by population. Data can be found here: https://www.kaggle.com/murderaccountability/homicide-reports
+
+For an interactive experience using this data, please visit [my Homicides Shiny App](https://tghrsolutions.shinyapps.io/homicides/ "My app")
+
+We will go through some exploratory analysis of
+
+- Total murders over time
+- The usual suspects
+-  Weapons of choice
+
+The analysis does not take population into consideration.
+
+Lat and Lon provided using ggmap: D. Kahle and H. Wickham. ggmap: Spatial Visualization with ggplot2. The R Journal, 5(1), 144-161. URL http://journal.r-project.org/archive/2013-1/kahle-wickham.pdf
+
+## Load libraries and Data
+```{r message = FALSE, echo = TRUE}
+library(ggplot2)
+library(plotly)
+library(ggmap)
+library(plyr)
+library(reshape2)
+library(scales)
+homicides <- readRDS("data/homicides.rds")
+# In case we want only a section of years
+years <- c(1980:2015)
+# Only interested in the US
+countries <- c("USA", "United States")
+homicides <- homicides[homicides$country %in% countries,]
+```
+
+## Total murders over time
+```{r fig.align='center', echo = FALSE, message = FALSE}
+freqYear <- count(homicides, vars = c("Year"))
+filteredYear <- freqYear[freqYear$Year %in% years,]
+p <- qplot(Year, freq, data = filteredYear) +
+           geom_smooth() + labs(x = "Year", y = "Total Murders in US")
+ggplotly(p)
+```
+
+<!-- ## Ussual Suspects -->
+<!-- Proportion of murders commited each year by relationship to victim -->
+
+<!-- Unknown subjects removed -->
+<!-- ```{r fig.align='center', echo = FALSE, message = FALSE} -->
+<!-- # relationship <- count(homicides, vars = c("Year","Relationship")) -->
+<!-- relationship <- prop.table(table(homicides$Year[homicides$Relationship != "Unknown"],homicides$Relationship[homicides$Relationship != "Unknown"]), 1) -->
+<!-- relationship <- as.data.frame(melt(relationship)) -->
+<!-- names(relationship) <- c("Year","Relationship","Proportion") -->
+<!-- relationship$percent <- percent(relationship$Proportion) -->
+<!-- # relationship <- relationship[order(- relationship$Proportion),] -->
+<!-- # aggregate(freq ~ Year + Relationship, relationship, FUN = function(x) x/sum(x)) -->
+<!-- # dcast(relationship, Year ~ Relationship) -->
+
+<!-- # realtionshipPer <- as.data.frame(lapply(dcast(relationship, Year ~ Relationship),function(x) x/sum(x))) -->
+<!-- p <- ggplot() + geom_area(aes(y = Proportion, x = Year, fill = Relationship), stat = "identity", data = relationship -->
+<!--           ) # + ggtitle("Proportion of murders commited each year by relationship to victim") -->
+<!-- # summedByYear <- aggregate(freq ~ Year, filteredYear, sum) -->
+<!-- ggplotly(p, hoverinfo = "text", text = ~paste('Year: ', Year)) -->
+
+<!-- ``` -->
+
+## Weapons of choice
+```{r fig.align='center', echo = FALSE, message = FALSE}
+weapons <- prop.table(table(homicides$Year,homicides$Weapon), 1)
+weapons <- as.data.frame(melt(weapons))
+names(weapons) <- c("Year","Weapon","Proportion")
+weapons$percent <- percent(weapons$Proportion)
+# aggregate(freq ~ Year + Relationship, relationship, FUN = function(x) x/sum(x))
+# dcast(relationship, Year ~ Relationship)
+# 
+# realtionshipPer <- as.data.frame(lapply(dcast(relationship, Year ~ Relationship),function(x) x/sum(x)))
+p <- ggplot() + geom_area(aes(y = Proportion, x = Year, fill = Weapon), stat = "identity", data = weapons) + ggtitle("Proportion of murders commited each year by weapon used")
+# summedByYear <- aggregate(freq ~ Year, filteredYear, sum)
+ggplotly(p, hoverinfo = "text", text = ~paste('Year: ', Year))
+```
+
